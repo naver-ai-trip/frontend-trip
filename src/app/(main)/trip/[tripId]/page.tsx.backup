@@ -1,0 +1,661 @@
+'use client'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import React, { use, useState } from 'react'
+import { tripService } from '@/services/trip-sevice'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Badge } from '@/components/ui/badge'
+import { Calendar, MapPin, Clock, Search, ArrowLeft, Star, GripVertical, X } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+
+interface Trip {
+  id: number
+  user_id: number
+  title: string
+  destination_country: string
+  destination_city: string
+  start_date: string
+  end_date: string
+  status: 'planning' | 'ongoing' | 'completed'
+  is_group: boolean
+  progress: string
+  duration_days: number | null
+  created_at: string
+  updated_at: string
+}
+
+interface Place {
+  id: number
+  naver_place_id: string
+  name: string
+  address: string
+  latitude: number
+  longitude: number
+  category: string
+  phone_number: string
+  rating: number
+  created_at: string
+  updated_at: string
+}
+
+interface Itinerary {
+  id?: number
+  trip_id: number
+  title: string
+  day_number: number
+  start_time: string
+  end_time: string
+  place_id: number
+  description: string
+  place?: Place
+}
+
+const TripDetail = ({
+  params,
+}: {
+  params: Promise<{ tripId: string }>
+}) => {
+  const { tripId } = use(params)
+  const router = useRouter()
+  const queryClient = useQueryClient()
+  const [searchQuery, setSearchQuery] = useState('')
+  const [selectedDay, setSelectedDay] = useState(1)
+  const [selectedPlace, setSelectedPlace] = useState<Place | null>(null)
+  const [showPlaceDetail, setShowPlaceDetail] = useState(false)
+  const [draggedPlace, setDraggedPlace] = useState<Place | null>(null)
+
+  const { data: trip, isLoading } = useQuery<Trip>({
+    queryKey: ['trip', tripId],
+    queryFn: async () => {
+      const response = await tripService.getTripDetails(tripId)
+      return response.data
+    },
+  })
+
+  // Mock itineraries - replace with actual API call
+  const { data: itineraries = [] } = useQuery<Itinerary[]>({
+    queryKey: ['itineraries', tripId],
+    queryFn: async () => {
+      // TODO: Replace with actual API call
+      return []
+    },
+  })
+
+  // Mock places - hardcoded for demo
+  const mockPlaces: Place[] = [
+    {
+      id: 1,
+      naver_place_id: "1234567890",
+      name: "Eiffel Tower",
+      address: "Champ de Mars, 5 Avenue Anatole France, 75007 Paris",
+      latitude: 48.8584,
+      longitude: 2.2945,
+      category: "Landmark",
+      phone_number: "+33 892 70 12 39",
+      rating: 4.6,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    },
+    {
+      id: 2,
+      naver_place_id: "1234567891",
+      name: "Louvre Museum",
+      address: "Rue de Rivoli, 75001 Paris",
+      latitude: 48.8606,
+      longitude: 2.3376,
+      category: "Museum",
+      phone_number: "+33 1 40 20 50 50",
+      rating: 4.7,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    },
+    {
+      id: 3,
+      naver_place_id: "1234567892",
+      name: "Arc de Triomphe",
+      address: "Place Charles de Gaulle, 75008 Paris",
+      latitude: 48.8738,
+      longitude: 2.2950,
+      category: "Monument",
+      phone_number: "+33 1 55 37 73 77",
+      rating: 4.6,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    },
+    {
+      id: 4,
+      naver_place_id: "1234567893",
+      name: "Notre-Dame Cathedral",
+      address: "6 Parvis Notre-Dame, 75004 Paris",
+      latitude: 48.8530,
+      longitude: 2.3499,
+      category: "Church",
+      phone_number: "+33 1 42 34 56 10",
+      rating: 4.7,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    },
+    {
+      id: 5,
+      naver_place_id: "1234567894",
+      name: "Sacré-Cœur Basilica",
+      address: "35 Rue du Chevalier de la Barre, 75018 Paris",
+      latitude: 48.8867,
+      longitude: 2.3431,
+      category: "Church",
+      phone_number: "+33 1 53 41 89 00",
+      rating: 4.7,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    },
+    {
+      id: 6,
+      naver_place_id: "1234567895",
+      name: "Champs-Élysées",
+      address: "Avenue des Champs-Élysées, 75008 Paris",
+      latitude: 48.8698,
+      longitude: 2.3078,
+      category: "Shopping",
+      phone_number: "",
+      rating: 4.5,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    }
+  ]
+
+  // Filter places based on search
+  const searchResults = searchQuery.length > 0
+    ? mockPlaces.filter(place =>
+      place.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      place.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      place.address.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+    : mockPlaces
+
+  const addToItineraryMutation = useMutation({
+    mutationFn: async (place: Place) => {
+      // TODO: Replace with actual API call
+      const newItinerary: Itinerary = {
+        trip_id: parseInt(tripId),
+        title: `Visit ${place.name}`,
+        day_number: selectedDay,
+        start_time: '09:00:00',
+        end_time: '11:00:00',
+        place_id: place.id,
+        description: place.address,
+      }
+      return newItinerary
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['itineraries', tripId] })
+      toast.success('Added to itinerary')
+    },
+    onError: () => {
+      toast.error('Failed to add to itinerary')
+    },
+  })
+
+  if (isLoading) {
+    return (
+      <div className='min-h-screen pt-24 flex items-center justify-center'>
+        <div className="animate-spin text-4xl">⏳</div>
+      </div>
+    )
+  }
+
+  if (!trip) {
+    return (
+      <div className='min-h-screen pt-24 px-4'>
+        <div className='max-w-7xl mx-auto text-center'>
+          <p>Trip not found</p>
+        </div>
+      </div>
+    )
+  }
+
+  const tripDays = Math.ceil(
+    (new Date(trip.end_date).getTime() - new Date(trip.start_date).getTime()) / (1000 * 60 * 60 * 24)
+  ) || 1
+
+  const getItinerariesByDay = (day: number) => {
+    return itineraries.filter((item) => item.day_number === day)
+  }
+
+  return (
+    <div className='min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900 pt-24 pb-12 px-4'>
+      <div className='max-w-7xlxl mx-auto space-y-6'>
+        {/* Header */}
+        <div className='p-4'>
+          <div className='flex items-start gap-4'>
+            <Button
+              variant='ghost'
+              size='icon'
+              onClick={() => router.push('/trip')}
+              className='mt-1'
+            >
+              <ArrowLeft className='h-5 w-5' />
+            </Button>
+            <div className='flex-1 space-y-3'>
+              <div className='flex gap-4 items-center'>
+                <h1 className='text-3xl font-bold'>
+                  {trip.title}
+                </h1>
+                <p className='text-muted-foreground mt-1'>{trip.progress}</p>
+              </div>
+              <div className='flex flex-wrap items-center gap-4'>
+                <div className='flex items-center gap-2 px-3 py-1.5 bg-muted/50 rounded-lg'>
+                  <MapPin className='h-4 w-4 text-primary' />
+                  <span className='text-sm font-medium'>{trip.destination_city}, {trip.destination_country}</span>
+                </div>
+                <div className='flex items-center gap-2 px-3 py-1.5 bg-muted/50 rounded-lg'>
+                  <Calendar className='h-4 w-4 text-primary' />
+                  <span className='text-sm font-medium'>
+                    {new Date(trip.start_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - {new Date(trip.end_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                  </span>
+                </div>
+                <Badge
+                  variant={trip.status === 'completed' ? 'default' : trip.status === 'ongoing' ? 'secondary' : 'outline'}
+                  className='px-3 py-1'
+                >
+                  {trip.status}
+                </Badge>
+                {tripDays > 0 && (
+                  <div className='flex items-center gap-2 px-3 py-1.5 bg-primary/10 rounded-lg'>
+                    <Clock className='h-4 w-4 text-primary' />
+                    <span className='text-sm font-medium text-primary'>{tripDays} days trip</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className='grid grid-cols-3'>
+          <div className='col-span-1 flex flex-col gap-4'>
+            <div>
+              <Input type='search' />
+            </div>
+            <Tabs>
+              <TabsList className='w-full'>
+                <TabsTrigger value='map' className='cursor-pointer'>Map View</TabsTrigger>
+                <TabsTrigger value='list' className='cursor-pointer'>List View</TabsTrigger>
+              </TabsList>
+              <TabsContent value='map'>
+                <Card className='shadow-md border-0 h-[calc(100vh-20rem)] py-0'>
+                  <CardContent className='p-0 h-full relative'>
+                    <div className='w-full h-full bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900 rounded-lg flex items-center justify-center relative overflow-hidden'>
+                      <div className='absolute inset-0 opacity-20'>
+                        <div className='absolute top-1/4 left-1/4 w-2 h-2 bg-primary rounded-full animate-pulse' />
+                        <div className='absolute top-1/3 right-1/3 w-2 h-2 bg-primary rounded-full animate-pulse delay-150' />
+                        <div className='absolute bottom-1/3 left-1/2 w-2 h-2 bg-primary rounded-full animate-pulse delay-300' />
+                      </div>
+                      <div className='text-center z-10'>
+                        <MapPin className='h-16 w-16 mx-auto mb-4 text-primary/50' />
+                        <p className='text-lg font-semibold text-muted-foreground'>Interactive Map</p>
+                        <p className='text-sm text-muted-foreground'>Places will be displayed here</p>
+                      </div>
+
+                      {searchResults.map((place, idx) => (
+                        <div
+                          key={place.id}
+                          className='absolute w-8 h-8 bg-primary rounded-full flex items-center justify-center shadow-lg cursor-pointer hover:scale-110 transition-transform border-2 border-white'
+                          style={{
+                            top: `${20 + (idx * 15) % 60}%`,
+                            left: `${15 + (idx * 20) % 70}%`,
+                          }}
+                          onClick={() => {
+                            setSelectedPlace(place)
+                            setShowPlaceDetail(true)
+                          }}
+                        >
+                          <MapPin className='h-4 w-4 text-white' />
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+              <TabsContent value='list'>
+                <Card className='shadow-md border-0 h-[calc(100vh-20rem)] py-0'>
+                  <CardContent className='p-0 h-full overflow-y-auto'>
+                    <div className='space-y-3 p-4'>
+                      {searchResults.length === 0 ? (
+                        <div className='text-center py-12 px-4'>
+                          <MapPin className='h-12 w-12 mx-auto mb-4 text-muted-foreground/30' />
+                          <p className='text-sm text-muted-foreground'>No places found</p>
+                        </div>
+                      ) : (
+                        searchResults.map((place) => (
+                          <Card
+                            key={place.id}
+                            className='cursor-move hover:shadow-md transition-all border-l-4 border-l-transparent hover:border-l-primary'
+                            draggable
+                            onDragStart={() => setDraggedPlace(place)}
+                            onDragEnd={() => setDraggedPlace(null)}
+                            onClick={() => {
+                              setSelectedPlace(place)
+                              setShowPlaceDetail(true)
+                            }}
+                          >
+                            <CardContent className='p-3'>
+                              <div className='flex items-start gap-3'>
+                                <div className='flex-shrink-0 w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center'>
+                                  <MapPin className='h-5 w-5 text-primary' />
+                                </div>
+                                <div className='flex-1 min-w-0'>
+                                  <div className='flex items-start justify-between gap-2 mb-1'>
+                                    <h4 className='font-semibold text-sm truncate'>{place.name}</h4>
+                                    {place.rating > 0 && (
+                                      <div className='flex items-center gap-1 bg-yellow-50 dark:bg-yellow-950 px-1.5 py-0.5 rounded flex-shrink-0'>
+                                        <Star className='h-3 w-3 fill-yellow-400 text-yellow-400' />
+                                        <span className='text-xs font-semibold'>{place.rating}</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                  <Badge variant='secondary' className='text-xs mb-2'>{place.category}</Badge>
+                                  <p className='text-xs text-muted-foreground line-clamp-1'>{place.address}</p>
+                                </div>
+                                <GripVertical className='h-4 w-4 text-muted-foreground flex-shrink-0' />
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
+          </div>
+          <div className='col-span-2'></div>
+        </div>
+
+        {selectedPlace && showPlaceDetail && (
+          <div
+            className='fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4'
+            onClick={() => {
+              setShowPlaceDetail(false)
+              setSelectedPlace(null)
+            }}
+          >
+            <Card
+              className='w-full max-w-2xl max-h-[90vh] overflow-y-auto'
+              onClick={(e) => e.stopPropagation()}
+            >
+              <CardHeader className='border-b'>
+                <div className='flex items-start justify-between'>
+                  <div className='flex-1'>
+                    <CardTitle className='text-2xl mb-2'>{selectedPlace.name}</CardTitle>
+                    <div className='flex items-center gap-3'>
+                      <Badge variant='secondary'>{selectedPlace.category}</Badge>
+                      {selectedPlace.rating > 0 && (
+                        <div className='flex items-center gap-1'>
+                          <Star className='h-4 w-4 fill-yellow-400 text-yellow-400' />
+                          <span className='font-semibold'>{selectedPlace.rating}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <Button
+                    variant='ghost'
+                    size='icon'
+                    onClick={() => {
+                      setShowPlaceDetail(false)
+                      setSelectedPlace(null)
+                    }}
+                  >
+                    <X className='h-5 w-5' />
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className='pt-6 space-y-6'>
+                {/* Address */}
+                <div className='space-y-2'>
+                  <h3 className='font-semibold flex items-center gap-2'>
+                    <MapPin className='h-4 w-4 text-primary' />
+                    Address
+                  </h3>
+                  <p className='text-sm text-muted-foreground pl-6'>{selectedPlace.address}</p>
+                </div>
+
+                {/* Phone */}
+                {selectedPlace.phone_number && (
+                  <div className='space-y-2'>
+                    <h3 className='font-semibold'>Phone</h3>
+                    <p className='text-sm text-muted-foreground'>{selectedPlace.phone_number}</p>
+                  </div>
+                )}
+
+                {/* Map Preview */}
+                <div className='space-y-2'>
+                  <h3 className='font-semibold'>Location</h3>
+                  <div className='w-full h-48 bg-muted rounded-lg flex items-center justify-center'>
+                    <MapPin className='h-12 w-12 text-muted-foreground/30' />
+                  </div>
+                  <p className='text-xs text-muted-foreground'>
+                    Coordinates: {selectedPlace.latitude}, {selectedPlace.longitude}
+                  </p>
+                </div>
+
+                {/* Actions */}
+                <div className='flex gap-2 pt-4 border-t'>
+                  <Button
+                    className='flex-1'
+                    onClick={() => {
+                      addToItineraryMutation.mutate(selectedPlace)
+                      setShowPlaceDetail(false)
+                      setSelectedPlace(null)
+                    }}
+                    disabled={addToItineraryMutation.isPending}
+                  >
+                    Add to Timeline
+                  </Button>
+                  <Button
+                    variant='outline'
+                    className='flex-1'
+                    onClick={() => {
+                      setShowPlaceDetail(false)
+                      setSelectedPlace(null)
+                    }}
+                  >
+                    Close
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+export default TripDetail
+
+//  <div className='grid grid-cols-1 lg:grid-cols-12 gap-4'>
+//           <div className='lg:col-span-5 space-y-4'>
+//             <Card className='shadow-md border-0 h-[calc(100vh-16rem)] py-0'>
+//               <CardContent className='p-0 h-full relative'>
+//                 <div className='w-full h-full bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900 rounded-lg flex items-center justify-center relative overflow-hidden'>
+//                   <div className='absolute inset-0 opacity-20'>
+//                     <div className='absolute top-1/4 left-1/4 w-2 h-2 bg-primary rounded-full animate-pulse' />
+//                     <div className='absolute top-1/3 right-1/3 w-2 h-2 bg-primary rounded-full animate-pulse delay-150' />
+//                     <div className='absolute bottom-1/3 left-1/2 w-2 h-2 bg-primary rounded-full animate-pulse delay-300' />
+//                   </div>
+//                   <div className='text-center z-10'>
+//                     <MapPin className='h-16 w-16 mx-auto mb-4 text-primary/50' />
+//                     <p className='text-lg font-semibold text-muted-foreground'>Interactive Map</p>
+//                     <p className='text-sm text-muted-foreground'>Places will be displayed here</p>
+//                   </div>
+
+//                   {searchResults.map((place, idx) => (
+//                     <div
+//                       key={place.id}
+//                       className='absolute w-8 h-8 bg-primary rounded-full flex items-center justify-center shadow-lg cursor-pointer hover:scale-110 transition-transform border-2 border-white'
+//                       style={{
+//                         top: `${20 + (idx * 15) % 60}%`,
+//                         left: `${15 + (idx * 20) % 70}%`,
+//                       }}
+//                       onClick={() => setSelectedPlace(place)}
+//                     >
+//                       <MapPin className='h-4 w-4 text-white' />
+//                     </div>
+//                   ))}
+//                 </div>
+//               </CardContent>
+//             </Card>
+//           </div>
+
+//           <div className='lg:col-span-4 space-y-4 py-0'>
+//             <Card className='shadow-md border-0'>
+//               <CardHeader className=''>
+//                 <div className='space-y-3'>
+//                   <CardTitle className='flex items-center gap-2 text-lg'>
+//                     <Search className='h-5 w-5 text-primary' />
+//                     Discover Places
+//                   </CardTitle>
+//                   <div className='relative group'>
+//                     <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors' />
+//                     <Input
+//                       placeholder='Search places...'
+//                       value={searchQuery}
+//                       onChange={(e) => setSearchQuery(e.target.value)}
+//                       className='pl-10 h-10'
+//                     />
+//                   </div>
+//                 </div>
+//               </CardHeader>
+//               <CardContent className='p-0'>
+//                 <div className='max-h-[calc(100vh-20rem)] overflow-y-auto p-4 space-y-3'>
+//                   {searchResults.length === 0 ? (
+//                     <div className='text-center py-12 px-4'>
+//                       <MapPin className='h-12 w-12 mx-auto mb-4 text-muted-foreground/30' />
+//                       <p className='text-sm text-muted-foreground'>No places found</p>
+//                     </div>
+//                   ) : (
+//                     searchResults.map((place) => (
+//                       <Card
+//                         key={place.id}
+//                         className='cursor-move hover:shadow-md transition-all border-l-4 border-l-transparent hover:border-l-primary'
+//                         draggable
+//                         onDragStart={() => setDraggedPlace(place)}
+//                         onDragEnd={() => setDraggedPlace(null)}
+//                         onClick={() => {
+//                           setSelectedPlace(place)
+//                           setShowPlaceDetail(true)
+//                         }}
+//                       >
+//                         <CardContent className='p-3'>
+//                           <div className='flex items-start gap-3'>
+//                             <div className='flex-shrink-0 w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center'>
+//                               <MapPin className='h-5 w-5 text-primary' />
+//                             </div>
+//                             <div className='flex-1 min-w-0'>
+//                               <div className='flex items-start justify-between gap-2 mb-1'>
+//                                 <h4 className='font-semibold text-sm truncate'>{place.name}</h4>
+//                                 {place.rating > 0 && (
+//                                   <div className='flex items-center gap-1 bg-yellow-50 dark:bg-yellow-950 px-1.5 py-0.5 rounded flex-shrink-0'>
+//                                     <Star className='h-3 w-3 fill-yellow-400 text-yellow-400' />
+//                                     <span className='text-xs font-semibold'>{place.rating}</span>
+//                                   </div>
+//                                 )}
+//                               </div>
+//                               <Badge variant='secondary' className='text-xs mb-2'>{place.category}</Badge>
+//                               <p className='text-xs text-muted-foreground line-clamp-1'>{place.address}</p>
+//                             </div>
+//                             <GripVertical className='h-4 w-4 text-muted-foreground flex-shrink-0' />
+//                           </div>
+//                         </CardContent>
+//                       </Card>
+//                     ))
+//                   )}
+//                 </div>
+//               </CardContent>
+//             </Card>
+//           </div>
+
+//           <div className='lg:col-span-3 space-y-4'>
+//             <Card className='shadow-md border-0 h-[calc(100vh-16rem)]'>
+//               <CardHeader className='border-b pb-3'>
+//                 <div className='flex items-center justify-between'>
+//                   <CardTitle className='flex items-center gap-2 text-lg'>
+//                     <Calendar className='h-5 w-5 text-primary' />
+//                     <span>Timeline</span>
+//                   </CardTitle>
+//                   <Badge variant='outline' className='text-xs'>
+//                     {tripDays} days
+//                   </Badge>
+//                 </div>
+//                 <div className='flex gap-2 mt-3 overflow-x-auto pb-2'>
+//                   {Array.from({ length: tripDays }, (_, i) => i + 1).map((day) => (
+//                     <button
+//                       key={day}
+//                       onClick={() => setSelectedDay(day)}
+//                       className={`
+//                         flex-shrink-0 px-4 py-2 rounded-lg font-medium text-sm transition-all
+//                         ${selectedDay === day
+//                           ? 'bg-primary text-primary-foreground shadow-sm'
+//                           : 'bg-muted hover:bg-muted/80'
+//                         }
+//                       `}
+//                     >
+//                       Day {day}
+//                     </button>
+//                   ))}
+//                 </div>
+//               </CardHeader>
+//               <CardContent
+//                 className='p-4 overflow-y-auto h-[calc(100vh-24rem)]'
+//                 onDragOver={(e) => e.preventDefault()}
+//                 onDrop={(e) => {
+//                   e.preventDefault()
+//                   if (draggedPlace) {
+//                     addToItineraryMutation.mutate(draggedPlace)
+//                     setDraggedPlace(null)
+//                   }
+//                 }}
+//               >
+//                 <div className='space-y-3'>
+//                   {getItinerariesByDay(selectedDay).length === 0 ? (
+//                     <div className='text-center py-12 px-4 border-2 border-dashed border-muted-foreground/20 rounded-lg'>
+//                       <Clock className='h-10 w-10 mx-auto mb-3 text-muted-foreground/30' />
+//                       <p className='text-sm font-medium mb-1'>Drop places here</p>
+//                       <p className='text-xs text-muted-foreground'>Drag places from the middle panel</p>
+//                     </div>
+//                   ) : (
+//                     getItinerariesByDay(selectedDay).map((item, index) => (
+//                       <div key={item.id} className='relative'>
+//                         {index !== getItinerariesByDay(selectedDay).length - 1 && (
+//                           <div className='absolute left-[18px] top-12 bottom-0 w-0.5 bg-primary/30' />
+//                         )}
+//                         <div className='flex gap-2'>
+//                           <div className='flex-shrink-0 w-9 h-9 bg-primary rounded-full flex items-center justify-center border-2 border-background shadow-sm z-10'>
+//                             <span className='text-xs font-bold text-primary-foreground'>{index + 1}</span>
+//                           </div>
+//                           <Card className='flex-1 border-l-2 border-l-primary'>
+//                             <CardContent className='p-3'>
+//                               <div className='flex items-start justify-between mb-2'>
+//                                 <h4 className='font-semibold text-sm flex-1'>{item.title}</h4>
+//                                 <Button variant='ghost' size='icon' className='h-6 w-6 -mt-1 -mr-1'>
+//                                   <X className='h-3 w-3' />
+//                                 </Button>
+//                               </div>
+//                               <p className='text-xs text-muted-foreground mb-2 line-clamp-2'>{item.description}</p>
+//                               <div className='flex items-center gap-1.5 bg-muted/50 px-2 py-1 rounded text-xs'>
+//                                 <Clock className='h-3 w-3 text-primary' />
+//                                 <span className='font-medium'>{item.start_time.slice(0, 5)} - {item.end_time.slice(0, 5)}</span>
+//                               </div>
+//                             </CardContent>
+//                           </Card>
+//                         </div>
+//                       </div>
+//                     ))
+//                   )}
+//                 </div>
+//               </CardContent>
+//             </Card>
+//           </div>
+//         </div>
