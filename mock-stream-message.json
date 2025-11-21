@@ -1,0 +1,79 @@
+{
+  "message": "I found 5 amazing places in Seoul that match your preferences! These include top-rated restaurants, cultural attractions, and hotels in the heart of the city.",
+  "components": [
+    {
+      "type": "places_list",
+      "data": {
+        "places": [
+          {
+            "name": "롯데호텔서울 도림",
+            "category": "중식>중식당",
+            "address": "서울특별시 중구 소공동 1 메인타워 37F",
+            "road_address": "서울특별시 중구 을지로 30 메인타워 37F",
+            "latitude": 37.5652853,
+            "longitude": 126.9808087,
+            "rating": 4.5,
+            "phone": "",
+            "naver_link": "https://www.lottehotel.com/seoul-hotel/ko/dining/restaurant-toh-lim",
+            "description": "",
+            "business_hours": null
+          },
+          {
+            "name": "서울시티투어버스",
+            "category": "버스>투어버스",
+            "address": "서울특별시 중구 태평로1가 62-9",
+            "road_address": "서울특별시 중구 세종대로 135-7",
+            "latitude": 37.5688156,
+            "longitude": 126.9767218,
+            "rating": 4.5,
+            "phone": "",
+            "naver_link": "https://www.instagram.com/seoultigerbus_official/",
+            "description": "",
+            "business_hours": null
+          },
+          {
+            "name": "롯데호텔서울 무궁화",
+            "category": "한식>한정식",
+            "address": "서울특별시 중구 소공동 1 롯데호텔서울 본관 38층",
+            "road_address": "서울특별시 중구 을지로 30 롯데호텔서울 본관 38층",
+            "latitude": 37.5654272,
+            "longitude": 126.9816208,
+            "rating": 4.5,
+            "phone": "",
+            "naver_link": "https://www.lottehotel.com/seoul-hotel/ko/dining/restaurant-mugunghwa",
+            "description": "",
+            "business_hours": null
+          },
+          {
+            "name": "국립현대미술관 서울",
+            "category": "문화,예술>미술관",
+            "address": "서울특별시 종로구 소격동 165",
+            "road_address": "서울특별시 종로구 삼청로 30",
+            "latitude": 37.5787817,
+            "longitude": 126.9800492,
+            "rating": 4.5,
+            "phone": "",
+            "naver_link": "http://www.mmca.go.kr/",
+            "description": "",
+            "business_hours": null
+          },
+          {
+            "name": "프레지던트 호텔",
+            "category": "숙박>호텔",
+            "address": "서울특별시 중구 을지로1가 188-3 프레지던트호텔",
+            "road_address": "서울특별시 중구 을지로 16 프레지던트호텔",
+            "latitude": 37.5657665,
+            "longitude": 126.9795531,
+            "rating": 4.5,
+            "phone": "",
+            "naver_link": "http://www.hotelpresident.co.kr/",
+            "description": "",
+            "business_hours": null
+          }
+        ]
+      }
+    }
+  ],
+  "actions_taken": ["Searched places in Seoul", "Found 5 locations matching your criteria"],
+  "next_suggestions": ["Add a place to itinerary", "Get directions", "Search nearby attractions"]
+}

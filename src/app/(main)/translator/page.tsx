@@ -17,6 +17,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import {
   Languages,
   Upload,
   Mic,
@@ -63,6 +70,10 @@ const TranslatorPage = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [speechTargetLang, setSpeechTargetLang] = useState("en");
   const [speechResult, setSpeechResult] = useState("");
+
+  // Modal states
+  const [selectedTranslation, setSelectedTranslation] = useState<any>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const audioInputRef = useRef<HTMLInputElement>(null);
@@ -557,6 +568,10 @@ const TranslatorPage = () => {
                     <div
                       key={translation.id}
                       className="hover:bg-muted/50 cursor-pointer rounded-lg border p-3 transition-colors"
+                      onClick={() => {
+                        setSelectedTranslation(translation);
+                        setIsModalOpen(true);
+                      }}
                     >
                       <div className="mb-2 flex items-center justify-between">
                         <Badge variant="outline" className="text-xs">
@@ -566,13 +581,11 @@ const TranslatorPage = () => {
                           {new Date(translation.created_at).toLocaleDateString()}
                         </span>
                       </div>
-                      {translation.source_type === 'text' && (
+                      {translation.source_type === "text" && (
                         <p className="mb-1 line-clamp-2 text-sm">{translation.source_text}</p>
                       )}
-                      {translation.source_type === 'image' && (
-                        <ImageWithToken
-                          url={translation.file_url}
-                        />
+                      {translation.source_type === "image" && (
+                        <ImageWithToken url={translation.file_url} />
                       )}
                       <p className="text-muted-foreground line-clamp-2 text-sm">
                         {translation.translated_text}
@@ -584,6 +597,82 @@ const TranslatorPage = () => {
             </Card>
           </div>
         </div>
+
+        {/* Full Translation Modal */}
+        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+          <DialogContent className="max-h-[80vh] max-w-2xl overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Full Translation</DialogTitle>
+              <DialogDescription>
+                {selectedTranslation?.source_type && (
+                  <Badge variant="outline" className="mt-2">
+                    {selectedTranslation.source_type}
+                  </Badge>
+                )}
+              </DialogDescription>
+            </DialogHeader>
+
+            {selectedTranslation && (
+              <div className="space-y-6 py-4">
+                {/* Source Content */}
+                <div className="space-y-2">
+                  <h3 className="text-sm font-semibold">Source</h3>
+                  {selectedTranslation.source_type === "text" && (
+                    <div className="bg-muted/50 rounded-lg p-4 text-sm break-words whitespace-pre-wrap">
+                      {selectedTranslation.source_text}
+                    </div>
+                  )}
+                  {selectedTranslation.source_type === "image" && (
+                    <div className="overflow-hidden rounded-lg border">
+                      <ImageWithToken url={selectedTranslation.file_url} />
+                    </div>
+                  )}
+                  {selectedTranslation.source_type === "speech" && (
+                    <div className="bg-muted/50 rounded-lg p-4 text-sm">
+                      <p className="text-muted-foreground italic">Audio file</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Translation Content */}
+                <div className="space-y-2">
+                  <h3 className="text-sm font-semibold">Translation</h3>
+                  <div className="bg-muted/50 rounded-lg p-4 text-sm break-words whitespace-pre-wrap">
+                    {selectedTranslation.translated_text}
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      copyToClipboard(selectedTranslation.translated_text);
+                    }}
+                    className="mt-2 w-full"
+                  >
+                    <Copy className="mr-2 h-4 w-4" />
+                    Copy Translation
+                  </Button>
+                </div>
+
+                {/* Metadata */}
+                <div className="text-muted-foreground grid grid-cols-2 gap-4 border-t pt-4 text-xs">
+                  <div>
+                    <p className="text-foreground mb-1 font-semibold">Date</p>
+                    <p>{new Date(selectedTranslation.created_at).toLocaleString()}</p>
+                  </div>
+                  {selectedTranslation.source_language && (
+                    <div>
+                      <p className="text-foreground mb-1 font-semibold">Languages</p>
+                      <p>
+                        {selectedTranslation.source_language} →{" "}
+                        {selectedTranslation.target_language}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

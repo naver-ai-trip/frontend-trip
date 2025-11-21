@@ -6,6 +6,7 @@ import VideoMessage from "./message-types/video-message";
 import TimelineMessage from "./message-types/timeline-message";
 import PlanMessage from "./message-types/plan-message";
 import CodeMessage from "./message-types/code-message";
+import PlacesListMessage from "./message-types/places-list-message";
 import { Message } from "@/types";
 import { Bot, User, Copy, ThumbsUp, ThumbsDown, MoreVertical } from "lucide-react";
 import { Button } from "./ui/button";
@@ -32,6 +33,8 @@ export default function ChatMessage({ message }: ChatMessageProps) {
         return <PlanMessage metadata={message.metadata} />;
       case "code":
         return <CodeMessage metadata={message.metadata} />;
+      case "places_list":
+        return <PlacesListMessage metadata={message.metadata} />;
       default:
         return <TextMessage content={message.content} />;
     }

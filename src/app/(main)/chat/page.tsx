@@ -21,6 +21,7 @@ import { Bot } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { MapRef } from "react-map-gl/mapbox";
+import { useStreamMessage } from "@/hooks/use-stream-message";
 
 export default function ChatPage() {
   const [messages, setMessages] = useState<Message[]>([
@@ -42,7 +43,22 @@ export default function ChatPage() {
   // remember last consumed prefilled message to avoid double-send
   const consumedPrefilledRef = useRef<string | null>(null);
   const [open, setOpen] = useState<boolean>(false);
-  // const [loading, setLoading] = useState<boolean>(false);
+
+  // Stream message hook
+  const { sendMessage: streamSendMessage } = useStreamMessage({
+    onError: (error) => {
+      console.error("Stream error:", error);
+      const errorMessage: Message = {
+        id: Date.now().toString(),
+        role: "agent",
+        type: "text",
+        content: "Sorry, there was an error connecting to the server. Please try again.",
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, errorMessage]);
+      setIsLoading(false);
+    },
+  });
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -52,60 +68,43 @@ export default function ChatPage() {
     scrollToBottom();
   }, [messages]);
 
-  const handleSendMessage = useCallback(async (content: string) => {
-    if (!content.trim()) return;
+  const handleSendMessage = useCallback(
+    async (content: string) => {
+      if (!content.trim()) return;
 
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      role: "user",
-      type: "text",
-      content,
-      timestamp: new Date(),
-    };
+      const userMessage: Message = {
+        id: Date.now().toString(),
+        role: "user",
+        type: "text",
+        content,
+        timestamp: new Date(),
+      };
 
-    setMessages((prev) => [...prev, userMessage]);
-    setIsLoading(true);
+      setMessages((prev) => [...prev, userMessage]);
+      setIsLoading(true);
 
-    try {
-      const response = await fetch("http://127.0.0.1:5000/chat", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ message: content }),
-      });
+      try {
+        await streamSendMessage(content, (message: Message) => {
+          setMessages((prev) => [...prev, message]);
+          setIsLoading(false);
+        });
+      } catch (error) {
+        console.error("Error calling API:", error);
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        // Fallback error message
+        const errorMessage: Message = {
+          id: Date.now().toString(),
+          role: "agent",
+          type: "text",
+          content: "Sorry, there was an error connecting to the server. Please try again.",
+          timestamp: new Date(),
+        };
+        setMessages((prev) => [...prev, errorMessage]);
+        setIsLoading(false);
       }
-
-      const data = await response.json();
-
-      const agentMessage: Message = {
-        id: Date.now().toString(),
-        role: "agent",
-        type: "text",
-        content: data.response || "Sorry, I couldn't process that request.",
-        timestamp: new Date(),
-      };
-
-      setMessages((prev) => [...prev, agentMessage]);
-    } catch (error) {
-      console.error("Error calling API:", error);
-
-      // Fallback error message
-      const errorMessage: Message = {
-        id: Date.now().toString(),
-        role: "agent",
-        type: "text",
-        content: "Sorry, there was an error connecting to the server. Please try again.",
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, errorMessage]);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+    },
+    [streamSendMessage],
+  );
 
   // consume prefilled message from query param (only once)
   useEffect(() => {
