@@ -281,7 +281,7 @@ export default function TripManagementPage() {
             }}
           >
             {/* <SheetTrigger asChild> */}
-            <Link href={"/create-trip"}>
+            <Link href={"/create-trip"} prefetch>
               <Button className="flex items-center gap-2">
                 <Plus className="h-4 w-4" />
                 Create Trip

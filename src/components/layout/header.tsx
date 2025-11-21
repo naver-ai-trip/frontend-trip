@@ -7,6 +7,7 @@ import { ModeToggle } from '../mode-toggle'
 import { LogIn, LogOut, Search, MapPin, Plane, User, Map, Heart } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover'
+import Image from 'next/image'
 
 export const Header = () => {
   const router = useRouter();
@@ -25,13 +26,14 @@ export const Header = () => {
     <header className="fixed top-0 z-50 w-full border-b  bg-white dark:bg-black/70 backdrop-blur-sm shadow-sm">
       <div className="container mx-auto px-4 h-20 flex items-center justify-between gap-6">
         <div className="flex items-center space-x-2 flex-shrink-0">
-          <Link href="/" className="flex items-center space-x-2 group">
-            <div className="p-2 rounded-lg bg-secondary transition-all">
+          <Link prefetch href="/" className="flex items-center space-x-2 group">
+            {/* <div className="p-2 rounded-lg bg-secondary transition-all">
               <Plane className="h-6 w-6 text-secondary-foreground" />
             </div>
             <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
               Visca
-            </h1>
+            </h1> */}
+            <Image src="/logo.png" width={210} height={80} alt='logo' />
           </Link>
         </div>
 
@@ -57,7 +59,7 @@ export const Header = () => {
           <ModeToggle />
           <div className="hidden sm:flex items-center space-x-2">
             <Button>
-              <Link href="/create-trip" className="flex items-center gap-2">
+              <Link prefetch href="/create-trip" className="flex items-center gap-2">
                 <MapPin className="h-4 w-4" />
                 <span>Plan new trip</span>
               </Link>
@@ -71,25 +73,25 @@ export const Header = () => {
               <PopoverContent align='end' className='p-1 w-40'>
                 <div className='flex flex-col space-y-2'>
                   <Button variant="ghost" size="default" asChild className="hover:bg-blue-50 dark:hover:bg-blue-950">
-                    <Link href="/trip" className="flex items-center justify-start gap-2">
+                    <Link prefetch href="/trip" className="flex items-center justify-start gap-2">
                       <Map className="h-4 w-4" />
                       <span>My trip</span>
                     </Link>
                   </Button>
                   <Button variant="ghost" size="default" asChild className="hover:bg-blue-50 dark:hover:bg-blue-950">
-                    <Link href="/favorites" className="flex items-center justify-start gap-2">
+                    <Link prefetch href="/favorites" className="flex items-center justify-start gap-2">
                       <Heart className="h-4 w-4" />
                       <span>My favorite</span>
                     </Link>
                   </Button>
                   <Button variant="ghost" size="default" asChild className="hover:bg-blue-50 dark:hover:bg-blue-950">
-                    <Link href="/login" className="flex items-center justify-start gap-2">
+                    <Link prefetch href="/login" className="flex items-center justify-start gap-2">
                       <LogOut className="h-4 w-4" />
                       <span>Login</span>
                     </Link>
                   </Button>
                   <Button size="default" variant={'ghost'} asChild className=" justify-start">
-                    <Link href="/register" className="flex items-center gap-2">
+                    <Link prefetch href="/register" className="flex items-center gap-2">
                       <LogIn className="h-4 w-4" />
                       <span>Sign Up</span>
                     </Link>

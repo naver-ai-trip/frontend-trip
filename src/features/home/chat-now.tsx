@@ -1,12 +1,13 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Paperclip, Send } from "lucide-react";
+import { Paperclip, Send, TrendingUp } from "lucide-react";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useRef, useState } from "react";
 const suggestions = [
   "Create a 7-day itinerary for Japan in spring.",
   "What are the top 5 must-see attractions in Paris?",
+  "Trip to Ha Noi.",
   "Suggest a budget-friendly trip to Italy for two weeks.",
   "Find off-the-beaten-path destinations in Southeast Asia.",
 ];
@@ -73,7 +74,7 @@ export const ChatNow = () => {
               placeholder="Type your message..."
               // disabled={isLoading}
               rows={2}
-              className="scrollbar-thin scrollbar-thumb-purple-300 dark:scrollbar-thumb-slate-600 max-h-32 w-full resize-none overflow-y-auto px-4 py-3 text-white placeholder-slate-500 focus:outline-none dark:placeholder-slate-400"
+              className="scrollbar-thin scrollbar-thumb-purple-300 dark:scrollbar-thumb-slate-600 max-h-32 w-full resize-none overflow-y-auto px-4 py-3 dark:text-white placeholder-slate-500 focus:outline-none dark:placeholder-slate-400"
               style={{ minHeight: "44px" }}
             />
 
@@ -96,14 +97,14 @@ export const ChatNow = () => {
               </div>
             </div>
           </div>
-          <div className="z-50 mt-4 flex w-full max-w-4xl flex-wrap items-center justify-start overflow-x-auto px-4">
+          <div className="z-50 mt-4 flex w-full max-w-5xl flex-wrap items-center justify-start overflow-x-auto px-4">
             {suggestions.map((suggestion, index) => (
               <button
                 key={index}
                 onClick={() => setInput(suggestion)}
                 className="m-2 inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm shadow-md transition hover:bg-white/90 dark:bg-slate-800/80 dark:hover:bg-slate-700/90"
               >
-                {suggestion}
+                <TrendingUp className="size-5" /> {suggestion}
               </button>
             ))}
           </div>

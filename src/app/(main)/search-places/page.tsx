@@ -336,8 +336,8 @@ const SearchPlace = () => {
     return (
       <Card
         className={cn(
-          "group cursor-pointer border-2 py-0 transition-all hover:shadow-lg",
-          isSelected ? "border-primary shadow-lg" : "border-border hover:border-primary/50",
+          "group cursor-pointer py-0 transition-all hover:shadow-lg",
+          isSelected ? "" : "border-border hover:border-primary/50",
         )}
         onClick={() => handleMarkerClick(place)}
       >
@@ -407,20 +407,20 @@ const SearchPlace = () => {
 
             <div className="flex items-center justify-between border-t pt-2">
               <div className="text-muted-foreground flex items-center gap-1 text-sm">
-                <span>{place.review_count} reviews</span>
+                <span>{place.review_count ?? 0} reviews</span>
               </div>
 
               {place.naver_link && (
-                <Button variant="outline" size="sm" asChild>
+                <Button variant="ghost" size="sm" asChild>
                   <a href={place.naver_link} target="_blank" rel="noopener noreferrer">
                     <ExternalLink className="mr-1 h-3 w-3" />
-                    View Details
+                    Social
                   </a>
                 </Button>
               )}
             </div>
 
-            <div className="flex items-center justify-between pt-2">
+            <div className="flex items-center justify-between">
               <div className="flex flex-col">
                 <span className="text-muted-foreground text-sm line-through">
                   ${getPlaceOriginalPrice(place.id)}
@@ -449,81 +449,6 @@ const SearchPlace = () => {
 
   return (
     <div className="bg-background flex h-screen flex-col pt-20">
-      <div className="bg-card space-y-4 border-b px-6 py-4">
-        <div className="flex items-center gap-4">
-          <div className="relative max-w-2xl flex-1">
-            <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
-            <Input
-              placeholder="Search for places, restaurants, hotels..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9"
-            />
-          </div>
-
-          {/* View Mode Toggle */}
-          <div className="flex items-center rounded-lg border">
-            <Button
-              variant={viewMode === "list" ? "default" : "ghost"}
-              size="sm"
-              onClick={() => setViewMode("list")}
-              className="rounded-r-none"
-            >
-              <List className="mr-1 h-4 w-4" />
-              List
-            </Button>
-            <Button
-              variant={viewMode === "split" ? "default" : "ghost"}
-              size="sm"
-              onClick={() => setViewMode("split")}
-              className="rounded-none border-x"
-            >
-              Split
-            </Button>
-            <Button
-              variant={viewMode === "map" ? "default" : "ghost"}
-              size="sm"
-              onClick={() => setViewMode("map")}
-              className="rounded-l-none"
-            >
-              <MapIcon className="mr-1 h-4 w-4" />
-              Map
-            </Button>
-          </div>
-
-          {/* Filter Button */}
-          <Button variant="outline" size="sm">
-            <Filter className="mr-1 h-4 w-4" />
-            Filters
-          </Button>
-        </div>
-
-        {/* Category Filters */}
-        <div className="flex gap-2 overflow-x-auto pb-2">
-          {CATEGORIES.map((category) => (
-            <Button
-              key={category.value}
-              variant={selectedCategory === category.value ? "default" : "outline"}
-              size="sm"
-              onClick={() => setSelectedCategory(category.value)}
-              className="whitespace-nowrap"
-            >
-              {category.label}
-            </Button>
-          ))}
-        </div>
-
-        {/* Results Summary */}
-        {searchResults.length > 0 && (
-          <div className="flex items-center justify-between">
-            <p className="text-muted-foreground text-sm">
-              Over {searchResults.length} places found for &quot;{debouncedQuery}&quot;
-            </p>
-            <Badge variant="outline">Prices include all fees</Badge>
-          </div>
-        )}
-      </div>
-
       <div className="flex flex-1 overflow-hidden">
         {(viewMode === "list" || viewMode === "split") && (
           <div
@@ -542,10 +467,10 @@ const SearchPlace = () => {
                     </div>
                   </div>
                 ) : error ? (
-                  <div className="py-20 text-center">
-                    <p className="text-destructive mb-4">Failed to search places</p>
-                    <Button onClick={() => refetch()}>Try Again</Button>
-                  </div>
+                  <ErrorState
+                    message="Failed to search places"
+                    onRetry={() => refetch()}
+                  />
                 ) : searchResults.length === 0 ? (
                   <div className="py-20 text-center">
                     {debouncedQuery ? (
@@ -567,7 +492,7 @@ const SearchPlace = () => {
                     )}
                   </div>
                 ) : (
-                  <div className="grid gap-6">
+                  <div className="grid grid-cols-3 gap-6">
                     {searchResults.map((place, index) => (
                       <PlaceCard key={`${place.id}-${index}`} place={place} />
                     ))}
@@ -641,6 +566,73 @@ const SearchPlace = () => {
                 </Marker>
               ))}
             </Map>
+            <div className="absolute top-0 z-10 left-0 right-0 flex flex-col items-center space-y-4 border-b px-6 py-4">
+              <div className="flex items-center gap-4">
+                <div className="relative w-2xl flex-1">
+                  <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+                  <Input
+                    placeholder="Search for places, restaurants, hotels..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-9 bg-card"
+                  />
+                </div>
+
+                {/* <div className="flex items-center rounded-lg border">
+                  <Button
+                    // variant={viewMode === "list" ? "default" : "ghost"}
+                    size="sm"
+                    onClick={() => setViewMode("list")}
+                    className="rounded-r-none"
+                  >
+                    <List className="mr-1 h-4 w-4" />
+                    List
+                  </Button>
+                  <Button
+                    variant={viewMode === "split" ? "default" : "ghost"}
+                    size="sm"
+                    onClick={() => setViewMode("split")}
+                    className="rounded-none border-x"
+                  >
+                    Split
+                  </Button>
+                  <Button
+                    variant={viewMode === "map" ? "default" : "ghost"}
+                    size="sm"
+                    onClick={() => setViewMode("map")}
+                    className="rounded-l-none"
+                  >
+                    <MapIcon className="mr-1 h-4 w-4" />
+                    Map
+                  </Button>
+                </div>
+                <Button variant="outline" size="sm">
+                  <Filter className="mr-1 h-4 w-4" />
+                  Filters
+                </Button> */}
+              </div>
+              <div className="flex gap-2 overflow-x-auto pb-2">
+                {CATEGORIES.map((category) => (
+                  <Button
+                    key={category.value}
+                    variant={selectedCategory === category.value ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setSelectedCategory(category.value)}
+                    className="whitespace-nowrap"
+                  >
+                    {category.label}
+                  </Button>
+                ))}
+              </div>
+              {searchResults.length > 0 && (
+                <div className="flex items-center justify-between">
+                  <p className="text-muted-foreground text-sm">
+                    Over {searchResults.length} places found for &quot;{debouncedQuery}&quot;
+                  </p>
+                  <Badge variant="outline">Prices include all fees</Badge>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>
@@ -785,6 +777,8 @@ const SearchPlace = () => {
 };
 
 import { Suspense } from "react";
+import Error from "next/error";
+import { ErrorState } from "@/components/error-state";
 
 export default function SearchPlacesPageWrapper() {
   return (

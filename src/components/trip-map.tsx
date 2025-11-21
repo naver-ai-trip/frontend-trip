@@ -150,13 +150,15 @@ const TripMap = forwardRef<MapRef, TripMapProps>(
         <Map
           ref={ref}
           mapboxAccessToken={process.env.NEXT_PUBLIC_MAPBOX_API_KEY}
+          // korea
           initialViewState={{
-            longitude: 105,
-            latitude: 15,
-            zoom: 4,
+            longitude: 127.024612,
+            latitude: 37.532600,
+            zoom: 8,
           }}
           style={{ width: '100%', height: '100%' }}
           mapStyle="mapbox://styles/mapbox/streets-v11"
+
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
         >

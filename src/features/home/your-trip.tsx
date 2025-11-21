@@ -14,7 +14,7 @@ export const YourTrip = () => {
           <h2 className='text-3xl font-semibold'>Ready for your adventure, Cuong!</h2>
           <p className='text-muted-foreground'>Here`s a quick look at what you`ve go planned. Use your travel tools for a seamless experience in Korea</p>
           <div className='space-x-3'>
-            <Link href={"/chat"}>
+            <Link prefetch href={"/chat"}>
               <Button className='' size={'lg'}>
                 <Calendar className='mr-2 h-4 w-4' />
                 <span>View Full Itinerary</span>
