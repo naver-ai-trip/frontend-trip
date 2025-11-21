@@ -28,6 +28,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
+import ImageWithToken from "@/components/image-with-token";
 
 const LANGUAGES = [
   { code: "en", name: "English" },
@@ -565,7 +566,14 @@ const TranslatorPage = () => {
                           {new Date(translation.created_at).toLocaleDateString()}
                         </span>
                       </div>
-                      <p className="mb-1 line-clamp-2 text-sm">{translation.source_text}</p>
+                      {translation.source_type === 'text' && (
+                        <p className="mb-1 line-clamp-2 text-sm">{translation.source_text}</p>
+                      )}
+                      {translation.source_type === 'image' && (
+                        <ImageWithToken
+                          url={translation.file_url}
+                        />
+                      )}
                       <p className="text-muted-foreground line-clamp-2 text-sm">
                         {translation.translated_text}
                       </p>
