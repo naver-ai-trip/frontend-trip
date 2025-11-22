@@ -5,10 +5,20 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 interface ModernLoaderProps {
   words?: string[];
+  currentProgressNode?: string | null;
 }
+
+const stateLabels: Record<string, string> = {
+  initialize: "Initializing...",
+  route: "Routing...",
+  search_plan: "Searching plans...",
+  generate: "Generating response...",
+  save: "Saving...",
+};
 
 const ModernLoader: React.FC<ModernLoaderProps> = ({
   words = ["Setting things up...", "Initializing modules...", "Almost ready..."],
+  currentProgressNode = null,
 }) => {
   const [currentLine, setCurrentLine] = useState(0);
   const [cursorVisible, setCursorVisible] = useState(true);
@@ -58,7 +68,6 @@ const ModernLoader: React.FC<ModernLoaderProps> = ({
     const interval = setInterval(() => setCursorVisible((prev) => !prev), 530);
     return () => clearInterval(interval);
   }, []);
-  console.log(cursorVisible);
 
   useEffect(() => {
     const cleanup = () => {
@@ -85,7 +94,7 @@ const ModernLoader: React.FC<ModernLoaderProps> = ({
         transition={{ duration: 0.3 }}
         className="bg-background relative rounded-2xl"
       >
-        <div className="relative z-10 flex items-center px-2 py-1">
+        <div className="relative z-10 flex flex-col items-center gap-2 px-2 py-1">
           {/* <div className="flex items-center gap-1.5">
             <motion.div className="w-2 xs:w-2.5 sm:w-3 h-2 xs:h-2.5 sm:h-3 rounded-full bg-red-500" />
             <motion.div className="w-2 xs:w-2.5 sm:w-3 h-2 xs:h-2.5 sm:h-3 rounded-full bg-yellow-500" />
@@ -96,7 +105,7 @@ const ModernLoader: React.FC<ModernLoaderProps> = ({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.2 }}
-            className="flex-1 text-center"
+            className="w-full flex-1 text-center"
           >
             <TypeAnimation
               words={words}
@@ -106,6 +115,18 @@ const ModernLoader: React.FC<ModernLoaderProps> = ({
               className="text-muted-foreground font-mono text-sm"
             />
           </motion.div>
+
+          {currentProgressNode && (
+            <motion.div
+              initial={{ opacity: 0, y: -5 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -5 }}
+              transition={{ duration: 0.3 }}
+              className="rounded bg-purple-100 px-2 py-1 text-xs font-semibold whitespace-nowrap text-purple-600 dark:bg-purple-900/30 dark:text-purple-400"
+            >
+              {stateLabels[currentProgressNode] || currentProgressNode}
+            </motion.div>
+          )}
         </div>
 
         {/* <div ref={containerRef} className="relative px-5 py-4 font-mono text-sm overflow-y-hidden h-[calc(100%-48px)]">

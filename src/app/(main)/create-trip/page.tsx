@@ -11,7 +11,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 
-interface TripFormData {
+export interface TripFormData {
   country: string;
   startDate: string;
   endDate: string;

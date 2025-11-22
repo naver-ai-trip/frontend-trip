@@ -447,7 +447,7 @@ const TripDetail = ({ params }: { params: Promise<{ tripId: string }> }) => {
               <TripMap
                 routes={routes}
                 ref={mapRef}
-                searchResults={searchPlaces?.data || []}
+                searchResults={searchPlaces?.data}
                 itineraries={getItinerariesByDay(selectedDay)}
                 selectedDay={selectedDay}
                 onAddPlace={(place) => {

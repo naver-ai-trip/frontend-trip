@@ -45,3 +45,19 @@ export const FAVORITES = {
   REMOVE_FAVORITE: (placeId: number) => `/favorites/${placeId}`,
   GET_FAVORITES: "/favorites",
 };
+
+export const CHAT_SESSIONS = {
+  ADD_SESSION: "/chat-sessions",
+  GET_SESSION: (sessionId: string) => `/chat-sessions/${sessionId}`,
+  DELETE_SESSION: (sessionId: string) => `/chat-sessions/${sessionId}`,
+  GET_SESSIONS: "/chat-sessions",
+  UPDATE_SESSION: (sessionId: string) => `/chat-sessions/${sessionId}`,
+  ACTIVATE_SESSION: (sessionId: string) => `/chat-sessions/${sessionId}/activate`,
+  DEACTIVATE_SESSION: (sessionId: string) => `/chat-sessions/${sessionId}/deactivate`,
+  SEND_MESSAGE: (sessionId: string) => `/chat-sessions/${sessionId}/messages`,
+  GET_MESSAGES: (sessionId: string) => `/chat-sessions/${sessionId}/messages`,
+  GET_MESSAGE: (sessionId: string, messageId: string) =>
+    `/chat-sessions/${sessionId}/messages/${messageId}`,
+
+  SEND_MESSAGE_STREAM: `/chat/stream`,
+};

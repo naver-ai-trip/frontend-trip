@@ -1,22 +1,45 @@
 "use client";
 
+import { TripFormData } from "@/app/(main)/create-trip/page";
 import { Button } from "@/components/ui/button";
-import { Paperclip, Send, TrendingUp } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Spinner } from "@/components/ui/spinner";
+import { chatSessionService, CreateSessionRequest } from "@/services/chat-session-service";
+import { tripService } from "@/services/trip-sevice";
+import { useMutation } from "@tanstack/react-query";
+import { Paperclip, Plus, Send, TrendingUp, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 const suggestions = [
-  "Create a 7-day itinerary for Japan in spring.",
-  "What are the top 5 must-see attractions in Paris?",
-  "Trip to Ha Noi.",
-  "Suggest a budget-friendly trip to Italy for two weeks.",
-  "Find off-the-beaten-path destinations in Southeast Asia.",
+  "5-day Seoul itinerary",
+  "Best places to visit in Busan",
+  "3-day Jeju trip",
+  "Budget Korea trip plan",
+  "Hidden gems in Korea",
 ];
 
 export const ChatNow = () => {
   const [input, setInput] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const navigate = useRouter();
+  const [open, setOpen] = useState(false);
+  const [newCity, setNewCity] = useState("");
 
+  const [formData, setFormData] = useState<TripFormData>({
+    country: "",
+    startDate: "",
+    endDate: "",
+    cities: [],
+  });
   useEffect(() => {
     const textarea = textareaRef.current;
     if (textarea) {
@@ -25,8 +48,75 @@ export const ChatNow = () => {
     }
   }, [input]);
 
+  const onOpen = () => {
+    setOpen(true);
+  };
+
+  const onClose = () => {
+    setOpen(false);
+  };
+
+  const calculateDays = () => {
+    if (formData.startDate && formData.endDate) {
+      const start = new Date(formData.startDate);
+      const end = new Date(formData.endDate);
+      const days = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+      return days > 0 ? days : 0;
+    }
+    return 0;
+  };
+
+  const handleAddCity = () => {
+    if (newCity.trim() && !formData.cities.includes(newCity.trim())) {
+      setFormData((prev) => ({
+        ...prev,
+        cities: [...prev.cities, newCity.trim()],
+      }));
+      setNewCity("");
+    }
+  };
+
+  const handleRemoveCity = (cityToRemove: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      cities: prev.cities.filter((city) => city !== cityToRemove),
+    }));
+  };
+
+  const createChatSession = useMutation({
+    mutationFn: async (data: CreateSessionRequest) => {
+      return await chatSessionService.createSession(data);
+    },
+  });
+
+  const {
+    mutateAsync: createTripAsync,
+    isPending,
+    data: newTrip,
+    isSuccess: isTripCreated,
+  } = useMutation({
+    mutationFn: async () => {
+      return await tripService.createTrip({
+        title: `Trip to ${formData.country}`,
+        destination_country: formData.country,
+        destination_city: formData.cities[0] || formData.country,
+        start_date: formData.startDate,
+        end_date: formData.endDate,
+        status: "planning",
+        is_group: false,
+        progress: `Planning to visit: ${formData.cities.join(", ")}`,
+      });
+    },
+    onSuccess: () => {
+      toast.success("Trip created successfully!");
+    },
+    onError: () => {
+      toast.error("Failed to create trip");
+    },
+  });
+
   const handleSubmit = () => {
-    navigate.push("/chat?message=" + encodeURIComponent(input));
+    onOpen();
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -36,8 +126,40 @@ export const ChatNow = () => {
     }
   };
 
-  const handleClickSend = () => {
-    handleSubmit();
+  const handleClickSend = async () => {
+    try {
+      const trip = await createTripAsync();
+      if (!trip) {
+        toast.error("Failed to create trip");
+        return;
+      }
+
+      const chatSession = await createChatSession.mutateAsync({
+        context: {
+          budget: "moderate",
+          interests: [],
+          destination: trip.destination_country,
+          travel_dates: {
+            start: trip.start_date,
+            end: trip.end_date,
+          },
+        },
+        session_type: "trip_planning",
+        trip_id: trip.data.id,
+      });
+      if (!chatSession.data) {
+        toast.error("Failed to create chat session");
+        return;
+      }
+      const url = `/chat?tripId=${trip.data.id}&sessionId=${chatSession.data?.id}&message=${encodeURIComponent(input)}`;
+      debugger;
+      navigate.push(url);
+    } catch (error) {
+      console.log(error);
+      toast.error("Something went wrong");
+    } finally {
+      onClose();
+    }
   };
 
   return (
@@ -74,7 +196,7 @@ export const ChatNow = () => {
               placeholder="Type your message..."
               // disabled={isLoading}
               rows={2}
-              className="scrollbar-thin scrollbar-thumb-purple-300 dark:scrollbar-thumb-slate-600 max-h-32 w-full resize-none overflow-y-auto px-4 py-3 dark:text-white placeholder-slate-500 focus:outline-none dark:placeholder-slate-400"
+              className="scrollbar-thin scrollbar-thumb-purple-300 dark:scrollbar-thumb-slate-600 max-h-32 w-full resize-none overflow-y-auto px-4 py-3 placeholder-slate-500 focus:outline-none dark:text-white dark:placeholder-slate-400"
               style={{ minHeight: "44px" }}
             />
 
@@ -90,7 +212,7 @@ export const ChatNow = () => {
                 Attach
               </Button>
               <div>
-                <Button onClick={handleClickSend} className="" variant="secondary">
+                <Button onClick={handleSubmit} className="" variant="secondary">
                   <Send />
                   Plan my trip
                 </Button>
@@ -110,6 +232,242 @@ export const ChatNow = () => {
           </div>
         </div>
       </div>
+      <Dialog open={open} onOpenChange={onClose}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create New Trip</DialogTitle>
+            <p className="text-muted-foreground text-sm">Let&apos;s create a new trip</p>
+          </DialogHeader>
+          <form className="space-y-3">
+            <div className="">
+              <div className="space-y-2">
+                <Label htmlFor="country">Country</Label>
+                <Input
+                  id="country"
+                  placeholder="Enter destination country..."
+                  value={formData.country}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, country: e.target.value }))}
+                  className="h-11"
+                  autoFocus
+                />
+              </div>
+              <div>
+                <p className="text-muted-foreground text-sm">Popular destinations</p>
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                  {["Thailand", "Vietnam", "Korea", "USA"].map((country) => (
+                    <Button
+                      key={country}
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setFormData((prev) => ({ ...prev, country }))}
+                      className={formData.country === country ? "border-primary bg-primary/5" : ""}
+                    >
+                      {country}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="startDate">Start Date</Label>
+                  <Input
+                    id="startDate"
+                    type="date"
+                    value={formData.startDate}
+                    onChange={(e) =>
+                      setFormData((prev) => ({ ...prev, startDate: e.target.value }))
+                    }
+                    className="h-11"
+                    min={new Date().toISOString().split("T")[0]}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="endDate">End Date</Label>
+                  <Input
+                    id="endDate"
+                    type="date"
+                    value={formData.endDate}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, endDate: e.target.value }))}
+                    className="h-11"
+                    min={formData.startDate || new Date().toISOString().split("T")[0]}
+                  />
+                </div>
+              </div>
+
+              {formData.startDate && formData.endDate && calculateDays() > 0 && (
+                <div className="bg-muted/50 rounded-lg border p-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground text-sm">Trip Duration</span>
+                    <span className="text-lg font-semibold">
+                      {calculateDays()} {calculateDays() === 1 ? "day" : "days"}
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+            <div className="space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="city">Add Cities</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="city"
+                    placeholder="Enter city name..."
+                    value={newCity}
+                    onChange={(e) => setNewCity(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleAddCity();
+                      }
+                    }}
+                    className="h-11 flex-1"
+                  />
+                  <Button
+                    type="button"
+                    onClick={handleAddCity}
+                    size="lg"
+                    disabled={!newCity.trim()}
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add
+                  </Button>
+                </div>
+              </div>
+
+              {formData.cities.length > 0 && (
+                <div className="space-y-3">
+                  <Label className="text-muted-foreground text-sm">
+                    Selected Cities ({formData.cities.length})
+                  </Label>
+                  <div className="flex flex-wrap gap-2">
+                    {formData.cities.map((city, index) => (
+                      <div
+                        key={index}
+                        className="bg-muted flex items-center gap-2 rounded-md border px-3 py-1.5"
+                      >
+                        <span className="text-sm font-medium">{city}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveCity(city)}
+                          className="hover:bg-destructive/20 rounded-full p-0.5 transition-colors"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {formData.country && (
+                <div>
+                  <p className="text-muted-foreground mb-2 text-sm">
+                    Popular cities in {formData.country}
+                  </p>
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                    {formData.country.toLowerCase() === "thailand" &&
+                      ["Bangkok", "Phuket", "Chiang Mai", "Pattaya", "Krabi", "Ayutthaya"].map(
+                        (city) => (
+                          <Button
+                            key={city}
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              if (!formData.cities.includes(city)) {
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  cities: [...prev.cities, city],
+                                }));
+                              }
+                            }}
+                            disabled={formData.cies?.includes(city)}
+                          >
+                            {city}
+                          </Button>
+                        ),
+                      )}
+
+                    {formData.country.toLowerCase() === "vietnam" &&
+                      ["Hà Nội", "Hồ Chí Minh", "Đà Nẵng", "Hội An", "Huế", "Nha Trang"].map(
+                        (city) => (
+                          <Button
+                            key={city}
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              if (!formData.cities.includes(city)) {
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  cities: [...prev.cities, city],
+                                }));
+                              }
+                            }}
+                            disabled={formData.cities.includes(city)}
+                          >
+                            {city}
+                          </Button>
+                        ),
+                      )}
+
+                    {formData.country.toLowerCase() === "korea" &&
+                      ["Seoul", "Busan", "Jeju", "Daegu", "Incheon", "Gwangju"].map((city) => (
+                        <Button
+                          key={city}
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            if (!formData.cities.includes(city)) {
+                              setFormData((prev) => ({
+                                ...prev,
+                                cities: [...prev.cities, city],
+                              }));
+                            }
+                          }}
+                          disabled={formData.cities.includes(city)}
+                        >
+                          {city}
+                        </Button>
+                      ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </form>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={handleClickSend}
+              disabled={
+                !(
+                  formData.country &&
+                  formData.startDate &&
+                  formData.endDate &&
+                  formData.cities.length > 0
+                )
+              }
+            >
+              {isPending || createChatSession.isPending ? (
+                <span className="flex items-center gap-2">
+                  <Spinner className="size-4" />
+                  Creating...
+                </span>
+              ) : (
+                "Create Trip"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 };

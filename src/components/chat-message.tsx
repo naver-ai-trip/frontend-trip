@@ -1,43 +1,80 @@
 "use client";
 
+import { MessageResponse } from "@/types";
+import { ChatContentResponseData } from "@/types/api";
+import { Bot, Copy, MoreVertical, ThumbsDown, ThumbsUp, User } from "lucide-react";
 import TextMessage from "./message-types/text-message";
-import ImageMessage from "./message-types/image-message";
-import VideoMessage from "./message-types/video-message";
-import TimelineMessage from "./message-types/timeline-message";
-import PlanMessage from "./message-types/plan-message";
-import CodeMessage from "./message-types/code-message";
 import PlacesListMessage from "./message-types/places-list-message";
-import { Message } from "@/types";
-import { Bot, User, Copy, ThumbsUp, ThumbsDown, MoreVertical } from "lucide-react";
 import { Button } from "./ui/button";
 
 interface ChatMessageProps {
-  message: Message;
-  isLoading?: boolean;
+  message: MessageResponse;
+  tripId: number;
+  trip?: any;
 }
 
-export default function ChatMessage({ message }: ChatMessageProps) {
-  const isUser = message.role === "user";
+export default function ChatMessage({ message, tripId, trip }: ChatMessageProps) {
+  const isUser = message.from_role === "user";
+  let contentParsed: ChatContentResponseData | null = null;
+
+  const rawContent = message?.content as any;
+
+  // Normalize content: accept both string and object
+  if (typeof rawContent === "string") {
+    if (!rawContent.trim()) {
+      return null;
+    }
+    try {
+      contentParsed = JSON.parse(rawContent) as ChatContentResponseData;
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (e: any) {
+      // If it's not valid JSON, treat as plain text
+      contentParsed = null;
+    }
+  } else if (rawContent && typeof rawContent === "object") {
+    contentParsed = rawContent as ChatContentResponseData;
+  } else {
+    return null;
+  }
 
   const renderContent = () => {
-    switch (message.type) {
-      case "text":
-        return <TextMessage content={message.content} />;
-      case "image":
-        return <ImageMessage metadata={message.metadata} />;
-      case "video":
-        return <VideoMessage metadata={message.metadata} />;
-      case "timeline":
-        return <TimelineMessage metadata={message.metadata} />;
-      case "plan":
-        return <PlanMessage metadata={message.metadata} />;
-      case "code":
-        return <CodeMessage metadata={message.metadata} />;
-      case "places_list":
-        return <PlacesListMessage metadata={message.metadata} />;
-      default:
-        return <TextMessage content={message.content} />;
+    // If parsing failed but we have plain text content, render it
+    if (!contentParsed) {
+      if (typeof rawContent === "string") {
+        return <TextMessage content={rawContent} />;
+      }
+      return null;
     }
+
+    switch (message.message_type) {
+      case "text":
+        return <TextMessage content={contentParsed.message ?? ""} />;
+      default:
+        // If message exists, show it as text even for other types
+        if (contentParsed.message) return <TextMessage content={contentParsed.message} />;
+        return null;
+    }
+  };
+
+  const renderComponents = () => {
+    if (!contentParsed || !contentParsed.components || contentParsed.components.length === 0) {
+      return null;
+    }
+
+    return (
+      <>
+        {contentParsed.components.map((component, idx) => {
+          if (component.type === "places_list") {
+            return (
+              <div key={`comp-${idx}`} className="mt-3">
+                <PlacesListMessage trip={trip} tripId={tripId} components={component.data.places} />
+              </div>
+            );
+          }
+          return null;
+        })}
+      </>
+    );
   };
 
   const formatTime = (date: Date) => {
@@ -48,7 +85,7 @@ export default function ChatMessage({ message }: ChatMessageProps) {
   };
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(message.content);
+    // navigator.clipboard.writeText(message.content);
   };
 
   return (
@@ -63,15 +100,16 @@ export default function ChatMessage({ message }: ChatMessageProps) {
 
       <div className={`flex flex-col ${isUser ? "items-end" : "items-start"} max-w-2xl`}>
         <div
-          className={`relative ${
+          className={`relative max-w-[100%] ${
             isUser
               ? "bg-secondary rounded-3xl rounded-tr-md border shadow-sm transition-shadow hover:shadow-md"
               : "text-foreground rounded-3xl rounded-tl-md border border-purple-100 bg-white shadow-sm transition-shadow hover:shadow-md dark:border-slate-700 dark:bg-slate-800"
           } px-4 py-2`}
         >
           <div className="break-words">{renderContent()}</div>
+          {renderComponents()}
           <div className={`text-xs ${isUser ? "" : "text-slate-400 dark:text-slate-500"}`}>
-            {formatTime(message.timestamp)}
+            {formatTime(new Date(message.created_at))}
           </div>
 
           <div

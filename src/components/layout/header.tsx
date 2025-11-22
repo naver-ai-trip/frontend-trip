@@ -1,5 +1,5 @@
 "use client";
-import { Heart, LogIn, LogOut, Map, MapPin, Search, User } from "lucide-react";
+import { Heart, LogOut, Map, MapPin, Search, User } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -9,9 +9,20 @@ import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../ui/dialog";
+import { LoginForm } from "@/features/auth/components/login-form";
+import { useAuth } from "@/hooks/use-auth";
+
 export const Header = () => {
   const router = useRouter();
+  const { clearAuthToken } = useAuth();
   const [searchTerm, setSearchTerm] = React.useState("");
+  const [loginOpen, setLoginOpen] = React.useState(false);
+
+  const handleLogout = () => {
+    clearAuthToken();
+    router.push("/login");
+  };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -102,32 +113,27 @@ export const Header = () => {
                     asChild
                     className="hover:bg-blue-50 dark:hover:bg-blue-950"
                   >
-                    <Link prefetch href="/login" className="flex items-center justify-start gap-2">
-                      <LogOut className="h-4 w-4" />
-                      <span>Login</span>
+                    <Link
+                      prefetch
+                      href="/conversations"
+                      className="flex items-center justify-start gap-2"
+                    >
+                      <Heart className="h-4 w-4" />
+                      <span>Conversations</span>
                     </Link>
                   </Button>
-                  <Button size="default" variant={"ghost"} asChild className="justify-start">
-                    <Link prefetch href="/register" className="flex items-center gap-2">
-                      <LogIn className="h-4 w-4" />
-                      <span>Sign Up</span>
-                    </Link>
+                  <Button
+                    variant="ghost"
+                    size="default"
+                    className="hover:bg-blue-50 dark:hover:bg-blue-950"
+                    onClick={handleLogout}
+                  >
+                    <LogOut className="h-4 w-4" />
+                    <span>Logout</span>
                   </Button>
                 </div>
               </PopoverContent>
             </Popover>
-            {/* <Button variant="ghost" size="default" asChild className="hover:bg-blue-50 dark:hover:bg-blue-950">
-              <Link href="/login" className="flex items-center gap-2">
-                <LogOut className="h-4 w-4" />
-                <span>Login</span>
-              </Link>
-            </Button>
-            <Button size="default" asChild className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-md hover:shadow-lg transition-all">
-              <Link href="/register" className="flex items-center gap-2">
-                <LogIn className="h-4 w-4" />
-                <span>Sign Up</span>
-              </Link>
-            </Button> */}
           </div>
 
           <Button variant="ghost" size="icon" className="md:hidden">
@@ -148,6 +154,17 @@ export const Header = () => {
           />
         </form>
       </div>
+      {/* Login Modal */}
+      <Dialog open={loginOpen} onOpenChange={setLoginOpen}>
+        <DialogContent className="p-0 sm:max-w-[720px]" showCloseButton>
+          <DialogHeader className="px-6 pt-6">
+            <DialogTitle>Login</DialogTitle>
+          </DialogHeader>
+          <div className="px-6 pb-6">
+            <LoginForm />
+          </div>
+        </DialogContent>
+      </Dialog>
     </header>
   );
 };
