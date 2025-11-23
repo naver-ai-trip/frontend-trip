@@ -7,11 +7,19 @@ import { Toolkit } from "@/features/home/toolkit";
 import { YourTrip } from "@/features/home/your-trip";
 import { PlaceRes, placesService } from "@/services/places-service";
 import { useQuery } from "@tanstack/react-query";
-import { useEffect } from "react";
-import { useAuth } from "@/hooks/use-auth";
+import { Suspense, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 
 export default function Home() {
-  const { token } = useAuth();
+  return (
+    <Suspense fallback={null}>
+      <HomeContent />
+    </Suspense>
+  );
+}
+
+function HomeContent() {
+  const params = useSearchParams();
 
   const places = useQuery<PlaceRes>({
     queryKey: ["places-home"],
@@ -22,8 +30,11 @@ export default function Home() {
   });
 
   useEffect(() => {
-    // Token is already managed by middleware and useAuth hook
-  }, [token]);
+    if (params.get("token")) {
+      localStorage.setItem("token", params.get("token") || "");
+    }
+  }, [params]);
+
   return (
     <>
       <ChatNow />

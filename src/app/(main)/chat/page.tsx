@@ -2,8 +2,6 @@
 
 import ChatInput from "@/components/chat-input";
 import ChatMessage from "@/components/chat-message";
-import TextMessage from "@/components/message-types/text-message";
-import { TextMessageAgentLoading } from "@/components/message-types/text-message-agent-loading";
 import ModernLoader from "@/components/ui/modern-loader";
 // import StreamStateDisplay from "@/components/stream-state-display";
 
@@ -206,7 +204,7 @@ export default function ChatPage() {
         const streamMessageReq: MessageStreamRequest = {
           message: content,
           session_id: Number(currentSessionId),
-          auth_token: `${localStorage.getItem("token") || "1|XhXYyGossrCNGHdB60vuLWPYwSbSO1RRcYHVFaAXd5a178cb"}`,
+          auth_token: `${localStorage.getItem("token")}`,
           trip_id: Number(currentTripId),
         };
 

@@ -21,7 +21,8 @@ export const Header = () => {
 
   const handleLogout = () => {
     clearAuthToken();
-    router.push("/login");
+    router.push("/");
+    window.location.reload();
   };
 
   const handleSearch = (e: React.FormEvent) => {
@@ -32,6 +33,8 @@ export const Header = () => {
       router.push("/search-places", { scroll: true });
     }
   };
+
+  const { token } = useAuth();
 
   return (
     <header className="fixed top-0 z-50 w-full border-b bg-white shadow-sm backdrop-blur-sm dark:bg-black/70">
@@ -81,56 +84,74 @@ export const Header = () => {
               </PopoverTrigger>
               <PopoverContent align="end" className="w-40 p-1">
                 <div className="flex flex-col space-y-2">
-                  <Button
-                    variant="ghost"
-                    size="default"
-                    asChild
-                    className="hover:bg-blue-50 dark:hover:bg-blue-950"
-                  >
-                    <Link prefetch href="/trip" className="flex items-center justify-start gap-2">
-                      <Map className="h-4 w-4" />
-                      <span>My trip</span>
-                    </Link>
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="default"
-                    asChild
-                    className="hover:bg-blue-50 dark:hover:bg-blue-950"
-                  >
-                    <Link
-                      prefetch
-                      href="/favorites"
-                      className="flex items-center justify-start gap-2"
+                  {!token ? (
+                    <Button
+                      variant="ghost"
+                      size="default"
+                      onClick={() => setLoginOpen(true)}
+                      className="flex justify-start hover:bg-blue-50 dark:hover:bg-blue-950"
                     >
-                      <Heart className="h-4 w-4" />
-                      <span>My favorite</span>
-                    </Link>
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="default"
-                    asChild
-                    className="hover:bg-blue-50 dark:hover:bg-blue-950"
-                  >
-                    <Link
-                      prefetch
-                      href="/conversations"
-                      className="flex items-center justify-start gap-2"
-                    >
-                      <Heart className="h-4 w-4" />
-                      <span>Conversations</span>
-                    </Link>
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="default"
-                    className="hover:bg-blue-50 dark:hover:bg-blue-950"
-                    onClick={handleLogout}
-                  >
-                    <LogOut className="h-4 w-4" />
-                    <span>Logout</span>
-                  </Button>
+                      <LogOut className="h-4 w-4" />
+                      <span>Login</span>
+                    </Button>
+                  ) : (
+                    <>
+                      <Button
+                        variant="ghost"
+                        size="default"
+                        asChild
+                        className="hover:bg-blue-50 dark:hover:bg-blue-950"
+                      >
+                        <Link
+                          prefetch
+                          href="/trip"
+                          className="flex items-center justify-start gap-2"
+                        >
+                          <Map className="h-4 w-4" />
+                          <span>My trip</span>
+                        </Link>
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="default"
+                        asChild
+                        className="hover:bg-blue-50 dark:hover:bg-blue-950"
+                      >
+                        <Link
+                          prefetch
+                          href="/favorites"
+                          className="flex items-center justify-start gap-2"
+                        >
+                          <Heart className="h-4 w-4" />
+                          <span>My favorite</span>
+                        </Link>
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="default"
+                        asChild
+                        className="hover:bg-blue-50 dark:hover:bg-blue-950"
+                      >
+                        <Link
+                          prefetch
+                          href="/conversations"
+                          className="flex items-center justify-start gap-2"
+                        >
+                          <Heart className="h-4 w-4" />
+                          <span>Conversations</span>
+                        </Link>
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="default"
+                        onClick={handleLogout}
+                        className="flex justify-start hover:bg-blue-50 dark:hover:bg-blue-950"
+                      >
+                        <LogOut className="h-4 w-4" />
+                        <span>Logout</span>
+                      </Button>
+                    </>
+                  )}
                 </div>
               </PopoverContent>
             </Popover>

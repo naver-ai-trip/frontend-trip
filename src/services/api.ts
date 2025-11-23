@@ -1,12 +1,10 @@
 import axios from "axios";
 
 const getToken = () => {
-  // Check if localStorage is available (client-side only)
   if (typeof window !== "undefined" && window.localStorage) {
-    return localStorage.getItem("token") || "1|XhXYyGossrCNGHdB60vuLWPYwSbSO1RRcYHVFaAXd5a178cb";
+    return localStorage.getItem("token");
   }
-  // Fallback token for server-side rendering
-  return "1|XhXYyGossrCNGHdB60vuLWPYwSbSO1RRcYHVFaAXd5a178cb";
+  return undefined;
 };
 
 const apiClient = axios.create({
