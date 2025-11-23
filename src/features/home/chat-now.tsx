@@ -385,7 +385,7 @@ export const ChatNow = () => {
                                 }));
                               }
                             }}
-                            disabled={formData.cies?.includes(city)}
+                            disabled={formData.cities?.includes(city)}
                           >
                             {city}
                           </Button>
